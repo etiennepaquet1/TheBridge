@@ -1,5 +1,6 @@
 import math
 import copy
+import time
 
 
 class Bike:
@@ -15,6 +16,24 @@ class TestRunResult:
         self.bikesSaved = bikesSaved
         self.groundCovered = groundCovered
 
+    # compare test run to a second results object and return if the argument is better than the caller object.
+    def isBetterResult(self, newResult):
+        global realBikes
+        global bikesNeeded
+        global turn
+        remainingGround = len(l0) - realBikes[0].x
+
+        # result score is
+
+        try:
+            oldScore = (self.groundCovered - remainingGround) * ((-40 / (turn - 51)) + 1) / abs(self.bikesSaved - bikesNeeded)
+            newScore = (newResult.groundCovered - remainingGround) * ((-40 / (turn - 51)) + 1) / abs(newResult.bikesSaved - bikesNeeded)
+
+        except ZeroDivisionError:
+            # this means the new score saves 0 bikes
+            return False
+
+        return newScore > oldScore and newResult.groundCovered > 3
 
 
 def SPEED(bikes):
@@ -39,17 +58,17 @@ def WAIT(bikes):
 
 def DOWN(bikes):
     # sort the bikes by y-position
-    bikes = sorted(bikes, key=lambda bike: bike.y,  reverse=True)
+    bikes = sorted(bikes, key=lambda bike: bike.y, reverse=True)
     for bike in bikes:
-        if bike.y < 3 and not any(b.y == bike.y+1 for b in bikes):
+        if bike.y < 3 and not any(b.y == bike.y + 1 for b in bikes):
             bike.y += 1
 
 
 def UP(bikes):
     # sort the bikes by y-position
-    bikes = sorted(bikes, key=lambda bike: bike.y,  reverse=False)
+    bikes = sorted(bikes, key=lambda bike: bike.y, reverse=False)
     for bike in bikes:
-        if bike.y > 0 and not any(b.y == bike.y-1 for b in bikes):
+        if bike.y > 0 and not any(b.y == bike.y - 1 for b in bikes):
             bike.y -= 1
 
 
@@ -69,11 +88,11 @@ def doAction(n: int, bikes: [Bike]):
             WAIT(bikes)
 
 
-
 def simulateTurn(bikes):
     bikesToRemove = []
     for bike in bikes:
-        for pos in range(bike.x, min(bike.x + bike.v, len(lanes[0]) - 1)):  # range is exclusive at the upper bound so we need to add 1
+        for pos in range(bike.x, min(bike.x + bike.v,
+                                     len(lanes[0]) - 1)):  # range is exclusive at the upper bound, so we need to add 1
             bike.x += 1
             if bike.j > 0:
                 bike.j -= 1
@@ -82,7 +101,6 @@ def simulateTurn(bikes):
                 break
     for bike in bikesToRemove:
         bikes.remove(bike)
-
 
     # # return the length of ground traveled
     # if len(bikes) == 0:
@@ -105,7 +123,7 @@ def printLanesWithBikes():
 # takes as input the action order presented and returns the number of bikes left after the actions are taken
 def testActionOrder(actions: [int]):
     global realBikes
-    print(f"Testing actions: {actions}")
+    # print(f"Testing actions: {actions}")
     testBikes = copy.deepcopy(realBikes)
     for action in actions:
         doAction(action, testBikes)
@@ -113,13 +131,11 @@ def testActionOrder(actions: [int]):
 
     groundCovered = testBikes[0].x if len(testBikes) > 0 else 0
 
-    print(f"{len(testBikes)} bikes are still around and has covered a distance of {groundCovered} ")
-
+    # print(f"{len(testBikes)} bikes are still around and has covered a distance of {groundCovered} ")
 
     trr = TestRunResult(len(testBikes), groundCovered)
 
     return trr  # returns a testRunResult with the number of bikes and the ground covered
-
 
 
 def incrementActionOrder(nextNActions: [int]):
@@ -140,19 +156,17 @@ def incrementActionOrder(nextNActions: [int]):
             done = True
 
 
-
-n = 5  # number of actions in the future to foresee
+n = 4  # number of actions in the future to foresee
 
 v = 0
 x = 0
 
 realBikes = [Bike(0, 0, 0, 0),
-         Bike(0, 0, 1, 0),
-         Bike(0, 0, 2, 0),
-         Bike(0, 0, 3, 0)]
+             Bike(0, 0, 1, 0),
+             Bike(0, 0, 2, 0),
+             Bike(0, 0, 3, 0)]
 
 bikesNeeded = 1
-
 
 l0 = "................000000000........00000........000.............00."
 l1 = ".0.0..................000....000......0.0..................00000."
@@ -161,54 +175,39 @@ l3 = "............0.000000...........0000...............0.0.....000000."
 
 lanes = [l0, l1, l2, l3]
 
+for turn in range(50):
+    # loop for one turn
+
+    # print the lanes
+    printLanesWithBikes()
 
 
-'''
-w = testActionOrder(nextNActions)
-print(w)
-'''
+    # find the best action
+    finishedTesting = False
+    nextNActions = n * [0]
+    bestActionOrder = nextNActions
+    bestResult = TestRunResult(0, 0)
+    t0 = time.time_ns()
+
+    while not finishedTesting:
+        result = testActionOrder(nextNActions)
+
+        numberSaved = result.bikesSaved
+        groundCovered = result.groundCovered
+
+        if bestResult.isBetterResult(result):
+            bestActionOrder = copy.deepcopy(nextNActions)
+            bestResult = TestRunResult(numberSaved, groundCovered)
+        incrementActionOrder(nextNActions)
+
+    t1 = time.time_ns()
+
+    print(f"Best action order: {bestActionOrder} with {bestResult.bikesSaved} bikes saved and {bestResult.groundCovered} unit(s) covered")
+    print(f"time passed: {(t1 - t0)/1000000000}")
+    print("\n")
 
 
-# loop for one turn:
-
-finishedTesting = False
-
-nextNActions = 5 * [0]
-bestActionOrder = nextNActions
-
-mostBikesSaved = 0
-mostGroundCovered = 0
-
-while not finishedTesting:
-    result = testActionOrder(nextNActions)
-
-    numberSaved = result.bikesSaved
-    groundCovered = result.groundCovered
-
-    if numberSaved > mostBikesSaved or (numberSaved == mostBikesSaved and groundCovered > mostGroundCovered):
-        bestActionOrder = nextNActions
-        mostBikesSaved = numberSaved
-        mostGroundCovered = groundCovered
-    incrementActionOrder(nextNActions)
-
-
-# n = testActionOrder([3, 3, 3, 3, 3])
-
-
-print(f"Best action order: {bestActionOrder}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # execute action on real bikes
+    doAction(bestActionOrder[0], realBikes)
+    simulateTurn(realBikes)
 
