@@ -127,7 +127,11 @@ def incrementActionOrder(nextNActions: [int]):
             done = True
 
 
-def bikeCrashes(bike): # does the bike crash during the next turn?
+def bikeCrashes(bike):  # does the bike crash during the next turn?
+    lane = lanes[bike.y]
+
+
+
 
     pass
 
