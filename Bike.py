@@ -1,5 +1,5 @@
 class Bike:
-    def __init__(self, v, x, y, j):
+    def __init__(self, v: int, x: int, y: int, j: int):
         self.v = v  # velocity of bike
         self.x = x  # horizontal position
         self.y = y  # lane of bike

@@ -4,7 +4,7 @@ from Bike import Bike as Bike
 from TestRunResult import TestRunResult as TestRunResult
 
 
-from testcase3 import lanes, l0, l1, l2, l3, realBikes, bikesNeeded
+from testcase72 import lanes, l0, l1, l2, l3, realBikes, bikesNeeded
 
 
 def SPEED(bikes):
@@ -130,7 +130,7 @@ def bikeCrashes(bike: Bike):  # does the bike crash during the next turn?
 
 
 
-n = 4  # number of actions in the future to foresee
+n = 5  # number of actions in the future to foresee
 
 
 
