@@ -4,7 +4,7 @@ from Bike import Bike as Bike
 from TestRunResult import TestRunResult as TestRunResult
 
 
-from testcase5 import lanes, l0, l1, l2, l3, realBikes, bikesNeeded
+from testcase3 import lanes, l0, l1, l2, l3, realBikes, bikesNeeded
 
 
 def SPEED(bikes):
@@ -20,7 +20,7 @@ def SLOW(bikes):
 
 def JUMP(bikes):
     for bike in bikes:
-        bike.j += bike.v
+        bike.j = True
 
 
 def WAIT(bikes):
@@ -55,29 +55,16 @@ def doAction(n: int, bikes: [Bike]):
             DOWN(bikes)
         case 4:
             SLOW(bikes)
-        case 5:
-            WAIT(bikes)
-
 
 def simulateTurn(bikes):
     bikesToRemove = []
     for bike in bikes:
-        for pos in range(bike.x, min(bike.x + bike.v + 1,
-                                     len(lanes[0]) - 1)):  # range is exclusive at the upper bound, so we need to add 1
-            if bike.j > 0:
-                bike.j -= 1
-            if bike.j == 0 and lanes[bike.y][pos] == "0":
-                bikesToRemove.append(bike)
-                break
-            bike.x += 1
+        if bikeCrashes(bike):
+            bikesToRemove.append(bike)
+        bike.x += bike.v
+        bike.j = False  # return the bike to the ground
     for bike in bikesToRemove:
         bikes.remove(bike)
-
-    # # return the length of ground traveled
-    # if len(bikes) == 0:
-    #     return 0
-    # else:
-    #     return bikes[0].x
 
 
 def printLanesWithBikes():
@@ -85,6 +72,8 @@ def printLanesWithBikes():
     for lane in lanes:
         lanesList += [list(lane)]
     for bike in realBikes:
+        if len(lanesList[bike.y]) <= bike.x:
+            bike.x = len(lanesList[bike.y]) - 1
         lanesList[bike.y][bike.x] = "J" if bike.j else "B"
     for lane in lanesList:
         print("".join(lane))
@@ -115,25 +104,30 @@ def incrementActionOrder(nextNActions: [int]):
     done = False
     nextNActions[cursor] += 1
     while not done:
-        if nextNActions[cursor] == 6:
+        if nextNActions[cursor] == 5:
             nextNActions[cursor] = 0
             cursor -= 1
             nextNActions[cursor] += 1
             # if every possibility has been tested
-            if cursor == 0 and nextNActions[cursor] == 6:
+            if cursor == 0 and nextNActions[cursor] == 5:
                 done = True
                 finishedTesting = True
         else:
             done = True
 
 
-def bikeCrashes(bike):  # does the bike crash during the next turn?
+def bikeCrashes(bike: Bike):  # does the bike crash during the next turn?
     lane = lanes[bike.y]
+    stripPassed = lane[bike.x + 1: bike.x + bike.v]  # strip of road that we pass (jumping doesn't crash)
+    landingSquare = lane[bike.x + bike.v] if bike.x + bike.v < len(lane) else "."  # square the bike lands on (jumping still crashes)
+    # print(lane)
+    # print(f"stripPassed: {stripPassed}, landingSquare: {landingSquare}")
 
+    if bike.j:
+        return landingSquare == "0"
+    else:
+        return "0" in stripPassed + landingSquare
 
-
-
-    pass
 
 
 n = 4  # number of actions in the future to foresee
